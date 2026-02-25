@@ -26,6 +26,6 @@ pushd $KOKORO_ARTIFACTS_DIR/github/skaffold >/dev/null
     # Pointing home to /tmp avoids this file-vs-folder conflict.
     export MAVEN_OPTS="-Duser.home=/tmp"
     export GRADLE_USER_HOME="/tmp/.gradle"
-    GCP_ONLY=true GCP_PROJECT=skaffold-ci-cd make integration-in-docker
+    GCP_ONLY=true make integration-in-docker
 popd
 
