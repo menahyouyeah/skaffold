@@ -284,6 +284,12 @@ integration-in-k3d: skaffold-builder
 			make integration \
 		'
 
+# Prevent Jib (Maven/Gradle) from crashing on Kokoro.
+# Kokoro is a "clean" environment and doesn't have a Maven settings file (~/.m2/settings.xml).
+# When Skaffold tries to sync that non-existent file into a Docker container, Docker 
+# mistakenly creates a FOLDER named 'settings.xml' instead. Jib then crashes because 
+# it can't read a folder as a configuration file. 
+# Pointing home to /tmp avoids this file-vs-folder conflict.
 .PHONY: integration-in-docker
 integration-in-docker: skaffold-builder-ci
 	docker run --rm \
@@ -299,8 +305,8 @@ integration-in-docker: skaffold-builder-ci
 		-e GOOGLE_APPLICATION_CREDENTIALS=$(GOOGLE_APPLICATION_CREDENTIALS) \
 		-e INTEGRATION_TEST_ARGS=$(INTEGRATION_TEST_ARGS) \
 		-e IT_PARTITION=$(IT_PARTITION) \
-		-e MAVEN_OPTS \
-		-e GRADLE_USER_HOME \
+		-e MAVEN_OPTS="-Duser.home=/tmp" \
+		-e GRADLE_USER_HOME="/tmp/.gradle" \
 		gcr.io/$(GCP_PROJECT)/skaffold-builder \
 		make integration-tests
 

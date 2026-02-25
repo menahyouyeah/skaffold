@@ -18,14 +18,6 @@ export DOCKER_NAMESPACE=gcr.io/k8s-skaffold
 source $KOKORO_GFILE_DIR/common.sh
 
 pushd $KOKORO_ARTIFACTS_DIR/github/skaffold >/dev/null
-    # Prevent Jib (Maven/Gradle) from crashing on Kokoro.
-    # Kokoro is a "clean" environment and doesn't have a Maven settings file (~/.m2/settings.xml).
-    # When Skaffold tries to sync that non-existent file into a Docker container, Docker 
-    # mistakenly creates a FOLDER named 'settings.xml' instead. Jib then crashes because 
-    # it can't read a folder as a configuration file. 
-    # Pointing home to /tmp avoids this file-vs-folder conflict.
-    export MAVEN_OPTS="-Duser.home=/tmp"
-    export GRADLE_USER_HOME="/tmp/.gradle"
     GCP_ONLY=true make integration-in-docker
 popd
 
