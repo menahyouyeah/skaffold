@@ -147,46 +147,51 @@ ifeq ($(GCP_ONLY),true)
 	gcloud auth configure-docker us-central1-docker.pkg.dev
 endif
 	@ GCP_ONLY=$(GCP_ONLY) GKE_CLUSTER_NAME=$(GKE_CLUSTER_NAME) ./hack/gotest.sh -v $(REPOPATH)/v2/integration -timeout 50m $(INTEGRATION_TEST_ARGS)
+
 .PHONY: integration
 integration: install integration-tests
 
 .PHONY: release
 release: $(BUILD_DIR)/VERSION
-	docker build \
+	docker buildx build \
 		--build-arg VERSION=$(VERSION) \
 		-f deploy/skaffold/Dockerfile \
 		--target release \
 		-t gcr.io/$(GCP_PROJECT)/skaffold:$(VERSION) \
                 -t gcr.io/$(GCP_PROJECT)/skaffold:latest \
+		--load \
 		.
 
 .PHONY: release-build
 release-build:
-	docker build \
+	docker buildx build \
 		-f deploy/skaffold/Dockerfile \
 		--target release \
 		-t gcr.io/$(GCP_PROJECT)/skaffold:edge \
 		-t gcr.io/$(GCP_PROJECT)/skaffold:$(COMMIT) \
+		--load \
 		.
 
 .PHONY: release-lts
 release-lts: $(BUILD_DIR)/VERSION
-	docker build \
+	docker buildx build \
 		--build-arg VERSION=$(VERSION) \
 		-f deploy/skaffold/Dockerfile.lts \
 		--target release \
 		-t gcr.io/$(GCP_PROJECT)/skaffold:lts \
 		-t gcr.io/$(GCP_PROJECT)/skaffold:$(VERSION)-lts \
 		-t gcr.io/$(GCP_PROJECT)/skaffold:$(SCANNING_MARKER)-lts \
+		--load \
 		.
 
 .PHONY: release-lts-build
 release-lts-build:
-	docker build \
+	docker buildx build \
 		-f deploy/skaffold/Dockerfile.lts \
 		--target release \
 		-t gcr.io/$(GCP_PROJECT)/skaffold:edge-lts \
 		-t gcr.io/$(GCP_PROJECT)/skaffold:$(COMMIT)-lts \
+		--load \
 		.
 
 .PHONY: clean
@@ -196,34 +201,35 @@ clean:
 .PHONY: build_deps
 build_deps:
 	$(eval DEPS_DIGEST := $(shell ./hack/skaffold-deps-sha1.sh))
-	docker build \
+	docker buildx build \
 		-f deploy/skaffold/Dockerfile.deps \
 		-t gcr.io/$(GCP_PROJECT)/build_deps:$(DEPS_DIGEST) \
+		--load \
 		deploy/skaffold
 	docker push gcr.io/$(GCP_PROJECT)/build_deps:$(DEPS_DIGEST)
 
 skaffold-builder-ci:
-	docker build \
+	docker buildx build \
 		--cache-from gcr.io/$(GCP_PROJECT)/build_deps \
 		-f deploy/skaffold/Dockerfile.deps \
-		-t gcr.io/$(GCP_PROJECT)/build_deps:$(COMMIT) \
+		-t gcr.io/$(GCP_PROJECT)/build_deps \
+		--load \
 		.
-	docker push gcr.io/$(GCP_PROJECT)/build_deps:$(COMMIT)
-	time docker build \
-		-f deploy/skaffold/Dockerfile \
-		--target builder \
-		-t gcr.io/$(GCP_PROJECT)/skaffold-builder:$(COMMIT) \
-		.
-	docker push gcr.io/$(GCP_PROJECT)/skaffold-builder:$(COMMIT)
-
-.PHONY: skaffold-builder
-skaffold-builder:
-	time docker build \
+	time docker buildx build \
 		-f deploy/skaffold/Dockerfile \
 		--target builder \
 		-t gcr.io/$(GCP_PROJECT)/skaffold-builder \
+		--load \
 		.
-	docker push gcr.io/$(GCP_PROJECT)/skaffold-builder:$(COMMIT)
+
+.PHONY: skaffold-builder
+skaffold-builder:
+	time docker buildx build \
+		-f deploy/skaffold/Dockerfile \
+		--target builder \
+		-t gcr.io/$(GCP_PROJECT)/skaffold-builder \
+		--load \
+		.
 
 .PHONY: integration-in-kind
 integration-in-kind: skaffold-builder
@@ -239,7 +245,7 @@ integration-in-kind: skaffold-builder
 		-e INTEGRATION_TEST_ARGS=$(INTEGRATION_TEST_ARGS) \
 		-e IT_PARTITION=$(IT_PARTITION) \
 		--network kind \
-		gcr.io/$(GCP_PROJECT)/skaffold-builder:$(COMMIT) \
+		gcr.io/$(GCP_PROJECT)/skaffold-builder \
 		sh -eu -c ' \
 			if ! kind get clusters | grep -q kind; then \
 			  trap "kind delete cluster" 0 1 2 15; \
@@ -264,7 +270,7 @@ integration-in-k3d: skaffold-builder
 		-v $(CURDIR)/hack/maven/settings.xml:/root/.m2/settings.xml \
 		-e INTEGRATION_TEST_ARGS=$(INTEGRATION_TEST_ARGS) \
 		-e IT_PARTITION=$(IT_PARTITION) \
-		gcr.io/$(GCP_PROJECT)/skaffold-builder:$(COMMIT) \
+		gcr.io/$(GCP_PROJECT)/skaffold-builder \
 		sh -eu -c ' \
 			if ! k3d cluster list | grep -q k3s-default; then \
 			  trap "k3d cluster delete" 0 1 2 15; \
@@ -293,7 +299,7 @@ integration-in-docker: skaffold-builder-ci
 		-e GOOGLE_APPLICATION_CREDENTIALS=$(GOOGLE_APPLICATION_CREDENTIALS) \
 		-e INTEGRATION_TEST_ARGS=$(INTEGRATION_TEST_ARGS) \
 		-e IT_PARTITION=$(IT_PARTITION) \
-		gcr.io/$(GCP_PROJECT)/skaffold-builder:$(COMMIT) \
+		gcr.io/$(GCP_PROJECT)/skaffold-builder \
 		make integration-tests
 
 .PHONY: submit-build-trigger
