@@ -146,7 +146,7 @@ ifeq ($(GCP_ONLY),true)
 		--project $(GCP_PROJECT)
 	gcloud auth configure-docker us-central1-docker.pkg.dev
 endif
-	@ GCP_ONLY=$(GCP_ONLY) GKE_CLUSTER_NAME=$(GKE_CLUSTER_NAME) ./hack/gotest.sh -v $(REPOPATH)/v2/integration -timeout 50m $(INTEGRATION_TEST_ARGS)
+	@ GCP_ONLY=$(GCP_ONLY) GKE_CLUSTER_NAME=$(GKE_CLUSTER_NAME) ./hack/gotest.sh -v $(REPOPATH)/v2/integration -timeout 50m $(INTEGRATION_TEST_ARGS) -run 'TestDiagnose'
 
 .PHONY: integration
 integration: install integration-tests
