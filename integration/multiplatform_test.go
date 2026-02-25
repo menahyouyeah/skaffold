@@ -39,7 +39,7 @@ const (
 
 func TestMultiPlatformWithRun(t *testing.T) {
 	isRunningInHybridCluster := os.Getenv("GKE_CLUSTER_NAME") == hybridClusterName
-	if isRunningInHybridCluster == hybridClusterName {
+	if isRunningInHybridCluster {
 		t.Skip("Skipping hybrid tests during Kokoro migration due to Docker daemon API limitations.")
 	}
 	type image struct {
