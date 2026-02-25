@@ -146,8 +146,7 @@ ifeq ($(GCP_ONLY),true)
 		--project $(GCP_PROJECT)
 	gcloud auth configure-docker us-central1-docker.pkg.dev
 endif
-	@ GCP_ONLY=$(GCP_ONLY) GKE_CLUSTER_NAME=$(GKE_CLUSTER_NAME) ./hack/gotest.sh -v $(REPOPATH)/v2/integration -timeout 50m $(INTEGRATION_TEST_ARGS) -run 'TestDiagnose'
-
+	@ GCP_ONLY=$(GCP_ONLY) GKE_CLUSTER_NAME=$(GKE_CLUSTER_NAME) ./hack/gotest.sh -v $(REPOPATH)/v2/integration -timeout 50m $(INTEGRATION_TEST_ARGS)
 .PHONY: integration
 integration: install integration-tests
 
@@ -207,13 +206,15 @@ skaffold-builder-ci:
 	docker build \
 		--cache-from gcr.io/$(GCP_PROJECT)/build_deps \
 		-f deploy/skaffold/Dockerfile.deps \
-		-t gcr.io/$(GCP_PROJECT)/build_deps \
+		-t gcr.io/$(GCP_PROJECT)/build_deps:$(COMMIT) \
 		.
+	docker push gcr.io/$(GCP_PROJECT)/build_deps:$(COMMIT)
 	time docker build \
 		-f deploy/skaffold/Dockerfile \
 		--target builder \
-		-t gcr.io/$(GCP_PROJECT)/skaffold-builder \
+		-t gcr.io/$(GCP_PROJECT)/skaffold-builder:$(COMMIT) \
 		.
+	docker push gcr.io/$(GCP_PROJECT)/skaffold-builder:$(COMMIT)
 
 .PHONY: skaffold-builder
 skaffold-builder:
@@ -222,6 +223,7 @@ skaffold-builder:
 		--target builder \
 		-t gcr.io/$(GCP_PROJECT)/skaffold-builder \
 		.
+	docker push gcr.io/$(GCP_PROJECT)/skaffold-builder:$(COMMIT)
 
 .PHONY: integration-in-kind
 integration-in-kind: skaffold-builder
@@ -237,7 +239,7 @@ integration-in-kind: skaffold-builder
 		-e INTEGRATION_TEST_ARGS=$(INTEGRATION_TEST_ARGS) \
 		-e IT_PARTITION=$(IT_PARTITION) \
 		--network kind \
-		gcr.io/$(GCP_PROJECT)/skaffold-builder \
+		gcr.io/$(GCP_PROJECT)/skaffold-builder:$(COMMIT) \
 		sh -eu -c ' \
 			if ! kind get clusters | grep -q kind; then \
 			  trap "kind delete cluster" 0 1 2 15; \
@@ -262,7 +264,7 @@ integration-in-k3d: skaffold-builder
 		-v $(CURDIR)/hack/maven/settings.xml:/root/.m2/settings.xml \
 		-e INTEGRATION_TEST_ARGS=$(INTEGRATION_TEST_ARGS) \
 		-e IT_PARTITION=$(IT_PARTITION) \
-		gcr.io/$(GCP_PROJECT)/skaffold-builder \
+		gcr.io/$(GCP_PROJECT)/skaffold-builder:$(COMMIT) \
 		sh -eu -c ' \
 			if ! k3d cluster list | grep -q k3s-default; then \
 			  trap "k3d cluster delete" 0 1 2 15; \
@@ -291,7 +293,7 @@ integration-in-docker: skaffold-builder-ci
 		-e GOOGLE_APPLICATION_CREDENTIALS=$(GOOGLE_APPLICATION_CREDENTIALS) \
 		-e INTEGRATION_TEST_ARGS=$(INTEGRATION_TEST_ARGS) \
 		-e IT_PARTITION=$(IT_PARTITION) \
-		gcr.io/$(GCP_PROJECT)/skaffold-builder \
+		gcr.io/$(GCP_PROJECT)/skaffold-builder:$(COMMIT) \
 		make integration-tests
 
 .PHONY: submit-build-trigger
