@@ -299,6 +299,8 @@ integration-in-docker: skaffold-builder-ci
 		-e GOOGLE_APPLICATION_CREDENTIALS=$(GOOGLE_APPLICATION_CREDENTIALS) \
 		-e INTEGRATION_TEST_ARGS=$(INTEGRATION_TEST_ARGS) \
 		-e IT_PARTITION=$(IT_PARTITION) \
+		-e MAVEN_OPTS \
+		-e GRADLE_USER_HOME \
 		gcr.io/$(GCP_PROJECT)/skaffold-builder \
 		make integration-tests
 
