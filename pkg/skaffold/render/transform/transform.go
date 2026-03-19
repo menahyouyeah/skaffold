@@ -39,7 +39,7 @@ var (
 			ConfigMap: map[string]string{},
 		},
 		"set-labels": {
-			Image:     "ghcr.io/kptdev/krm-functions-catalog/set-labels:v0.1",
+			Image:     "ghcr.io/kptdev/krm-functions-catalog/set-labels:v0.1.5",
 			ConfigMap: map[string]string{},
 		},
 		"set-annotations": {
@@ -47,11 +47,11 @@ var (
 			ConfigMap: map[string]string{},
 		},
 		"create-setters": {
-			Image:     "ghcr.io/kptdev/krm-functions-catalog/create-setters:unstable",
+			Image:     "ghcr.io/kptdev/krm-functions-catalog/create-setters:v0.1.3",
 			ConfigMap: map[string]string{},
 		},
 		"apply-setters": {
-			Image:     "ghcr.io/kptdev/krm-functions-catalog/apply-setters:unstable",
+			Image:     "ghcr.io/kptdev/krm-functions-catalog/apply-setters:v0.2.4",
 			ConfigMap: map[string]string{},
 		},
 		"ensure-name-substring": {
