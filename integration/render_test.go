@@ -2375,7 +2375,7 @@ metadata:
   name: example
 pipeline:
   mutators:
-    - image: gcr.io/kpt-fn/set-annotations:v0.1.4
+    - image: ghcr.io/kptdev/krm-functions-catalog/set-annotations:v0.1
       configPath: fn-config.yaml`,
 				"set-annotations/fn-config.yaml": `apiVersion: fn.kpt.dev/v1alpha1
 kind: SetAnnotations
